@@ -1,76 +1,160 @@
+/*
+* File:   main.c
+* Author: Sarvesh SP
+*/
+
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 
-#define SHIFT_AMOUNT 5
-
-int main()
+/*
+* The Caesar Cipher exercise solution
+*/
+int main(int argc, char **argv)
 {
-    char original[100];
+	char shiftResponse;
+	bool leftShift = true;
+	int shiftAmount;
 
-    bool validMessage = false;
-    printf("Enter the message to be encrypted(Upper case only): ");
-    fgets(original, sizeof(original), stdin);
-    int orilen = strnlen(original, sizeof(original)) - 1;
-    while (!validMessage)
-    {
-        validMessage = true;
+	// Note: With some C implementations, scanf reads in the
+	// shiftResponse character but leaves the \n character from when the user
+	// pressed the Enter key sitting on the input stream (the
+	// keyboard input) waiting to be processed. The call to the
+	// getchar function below clears that character out so
+	// that the input stream is empty next time we do a scanf.
+	// We need to do that after reading the shift amount as well
 
-        for (int i = 0; i < orilen; i++)
-        {
-            if (!isupper(original[i]))
-            {
-                printf("\n");
-                printf("Message must contain only uppercase characters\n");
-                printf("Enter again: ");
-                fgets(original, sizeof(original), stdin);
-                orilen = strnlen(original, sizeof(original)) - 1;
+	// get left or right shift
+	printf("Left or right shift (enter l or r)? ");
+	scanf("%c", &shiftResponse);
+	getchar();
+	shiftResponse = tolower(shiftResponse);
+	while (shiftResponse != 'l' && shiftResponse != 'r')
+	{
+		printf("\n");
+		printf("Shift can only be left or right\n");
+		printf("Left or right shift (enter l or r)? ");
+		scanf("%c", &shiftResponse);
+		getchar();
+		shiftResponse = tolower(shiftResponse);
+	}
+	if (shiftResponse == 'r')
+	{
+		leftShift = false;
+	}
 
-                validMessage = false;
-                break;
-            }
-        }
-    }
+	// get valid shift amount
+	printf("\n");
+	printf("Enter shift amount (1-25): ");
+	scanf("%d", &shiftAmount);
+	getchar();
+	while (shiftAmount < 1 || shiftAmount > 25)
+	{
+		printf("\n");
+		printf("Shift amount must be between 1 and 25\n");
+		printf("Enter shift amount (1-25): ");
+		scanf("%d", &shiftAmount);
+		getchar();
+	}
 
-    char *encrytedMessage = malloc((orilen + 1) * sizeof(char));
-    for (int i = 0; i < orilen; i++)
-    {
-        encrytedMessage[i] = original[i] + SHIFT_AMOUNT;
-        if (encrytedMessage[i] > 'Z')
-        {
-            encrytedMessage[i] -= 'Z' - 'A' + 1;
+	char originalMessage[100];
 
-            //'[' is at 91 and ('Z' is 90 in table)
-            //'Z' is 90 and 'A' is 68 , so 'Z' - 'A' + 1 is 26
-            //'[' is changed from 91 to 91 - 26, which is 65 i.e ('A')
-        }
-    }
-    encrytedMessage[orilen] = '\0';
+	// prompt for and get valid string to be encrypted
+	bool validMessage = false;
+	printf("\n");
+	printf("Enter message to be encrypted (upper case alphabetic characters only): ");
+	fgets(originalMessage, sizeof(originalMessage), stdin);
+	int originalMessageLength = strnlen(originalMessage, sizeof(originalMessage)) - 1;
+	while (!validMessage)
+	{
+		// invalid if non-upper case alpha characters in message (don't include newline at end))
+		validMessage = true;
+		for (int i = 0; i < originalMessageLength; i++)
+		{
+			if (!isupper(originalMessage[i]))
+			{
+				printf("\n");
+				printf("Message must contain only upper case alphabetic characters!\n");
+				printf("Enter message to be encrypted (upper case alphabetic characters only): ");
+				fgets(originalMessage, sizeof(originalMessage), stdin);
+				originalMessageLength = strnlen(originalMessage, sizeof(originalMessage)) - 1;
 
-    int encryplen = orilen;
-    char *decry = malloc((encryplen + 1) * sizeof(char));
-    for (int i = 0; i < encryplen; i++)
-    {
-        decry[i] = encrytedMessage[i] - SHIFT_AMOUNT;
-        if (decry[i] < 'A')
-        {
-            decry[i] += 'Z' - 'A' + 1;
-            //'@' is at 64 in table ('A' is at 65 at table)
-            //'Z' is 90, 'A' is 65, so 'Z' - 'A' + 1 is 26
-            //'@' is changed from 64 to 64 + 26 , which is 90 ('Z')
-        }
-    }
-    decry[encryplen] = '\0';
+				// reset flag and exit for loop
+				validMessage = false;
+				break;
+			}
+		}
+	}
 
-    printf("\n");
-    printf("Original Message : %s", original);
-    printf("Encrypted Message: %s\n", encrytedMessage);
-    printf("Decrypted Message: %s\n", decry);
+	// build encrypted string (make sure it's null-terminated)
+	// Note that we have to use pointers here to dynamically
+	// allocate the encryptedMessage array in Visual Studio
+	char *encryptedMessage = malloc((originalMessageLength + 1) * sizeof(char));
+	for (int i = 0; i < originalMessageLength; i++)
+	{
+		if (leftShift)
+		{
+			encryptedMessage[i] = originalMessage[i] - shiftAmount;
+			if (encryptedMessage[i] < 'A')
+			{
+				encryptedMessage[i] += 'Z' - 'A' + 1;
+			}
+		}
+		else
+		{
+			encryptedMessage[i] = originalMessage[i] + shiftAmount;
+			if (encryptedMessage[i] > 'Z')
+			{
+				encryptedMessage[i] -= 'Z' - 'A' + 1;
+			}
+		}
+	}
+	encryptedMessage[originalMessageLength] = '\0';
 
-    free(encrytedMessage);
-    encrytedMessage = NULL;
-    free(decry);
-    decry = NULL;
+	// build decrypted string (make sure it's null-terminated)
+	// Note that we have to use pointers here to dynamically
+	// allocate the decryptedMessage array in Visual Studio
+	int encryptedMessageLength = originalMessageLength;
+	char *decryptedMessage = malloc((encryptedMessageLength + 1) * sizeof(char));
+	for (int i = 0; i < encryptedMessageLength; i++)
+	{
+		if (leftShift)
+		{
+			decryptedMessage[i] = encryptedMessage[i] + shiftAmount;
+			if (decryptedMessage[i] > 'Z')
+			{
+				decryptedMessage[i] -= 'Z' - 'A' + 1;
+			}
+		}
+		else
+		{
+			decryptedMessage[i] = (encryptedMessage[i] - shiftAmount);
+			if (decryptedMessage[i] < 'A')
+			{
+				decryptedMessage[i] += 'Z' - 'A' + 1;
+			}
+		}
+	}
+	decryptedMessage[encryptedMessageLength] = '\0';
+
+	// print messages
+	printf("\n");
+	printf("Original Message : %s", originalMessage);
+	printf("Encrypted Message: %s\n", encryptedMessage);
+	printf("Decrypted Message: %s\n", decryptedMessage);
+
+	// free memory because we used pointers
+	// this is just good pointer use; you don't need it for this exercise
+	free(encryptedMessage);
+	encryptedMessage = NULL;
+	free(decryptedMessage);
+	decryptedMessage = NULL;
+
+	printf("\n");
+	return (EXIT_SUCCESS);
 }
